@@ -1,0 +1,61 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.venv/
+venv/
+env/
+
+# uv
+.uv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# macOS
+.DS_Store
+
+# Data & models (don't commit large files)
+data/raw/
+data/processed/
+data/external/
+outputs/checkpoints/
+outputs/logs/
+outputs/predictions/
+*.pth
+*.pt
+*.onnx
+*.h5
+*.pkl
+
+# Env vars / secrets
+.env
+.env.local
+
+# Experiment tracking
+wandb/
+mlruns/
+
+# Ruff / mypy cache
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/

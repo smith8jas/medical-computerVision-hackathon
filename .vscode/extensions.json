@@ -1,0 +1,15 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-renderers",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "eamodio.gitlens",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "mechatroner.rainbow-csv",
+        "github.copilot"
+    ]
+}
