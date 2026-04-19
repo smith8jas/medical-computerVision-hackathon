@@ -38,9 +38,12 @@ env/
 data/raw/
 data/processed/
 data/external/
-outputs/checkpoints/
-outputs/logs/
-outputs/predictions/
+outputs/checkpoints/*
+outputs/logs/*
+outputs/predictions/*
+!outputs/checkpoints/.gitkeep
+!outputs/logs/.gitkeep
+!outputs/predictions/.gitkeep
 *.pth
 *.pt
 *.onnx
