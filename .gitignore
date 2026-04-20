@@ -38,6 +38,8 @@ env/
 data/raw/
 data/processed/
 data/external/
+data/train_val
+data/test_images
 outputs/checkpoints/*
 outputs/logs/*
 outputs/predictions/*
