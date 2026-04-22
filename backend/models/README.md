@@ -10,3 +10,7 @@ Examples:
 
 Once the final model is selected, wire it into
 `backend/app/model_service.py`.
+
+Current Render default:
+
+- `05_7_1_efnet_densenet_joint_best.pt`

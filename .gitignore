@@ -51,6 +51,7 @@ outputs/predictions/*
 *.onnx
 *.h5
 *.pkl
+!backend/models/05_7_1_efnet_densenet_joint_best.pt
 
 # Env vars / secrets
 .env
