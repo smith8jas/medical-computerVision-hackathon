@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MedPrecision AI</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">M</div>
+          <div>
+            <strong>MedPrecision AI</strong>
+            <span>Clinical AI Suite</span>
+          </div>
+        </div>
+
+        <nav class="side-nav" aria-label="Primary">
+          <a class="side-link is-active" href="#">Upload Case</a>
+          <a class="side-link" href="#">Dashboard</a>
+          <a class="side-link" href="#">History</a>
+          <a class="side-link" href="#">Insights</a>
+          <a class="side-link" href="#">System Health</a>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="dot"></span>
+          <div>
+            <strong>System Status</strong>
+            <p>Frontend is live. Connect the final backend model to enable inference.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Diagnostic Upload</p>
+            <h1>Chest X-ray Review</h1>
+            <p class="lede">
+              Upload one or more scans, run the cardiomegaly model, and review the decision with per-image confidence.
+            </p>
+          </div>
+
+          <label class="field backend-field">
+            <span>Backend URL</span>
+            <input id="backend-url" type="text" value="" />
+          </label>
+        </header>
+
+        <section class="content-grid">
+          <section class="upload-panel panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Upload Workspace</p>
+                <h2>Drop X-ray files here</h2>
+              </div>
+            </div>
+
+            <label class="upload-zone" for="files">
+              <input id="files" type="file" accept="image/*" multiple />
+              <span class="upload-icon">+</span>
+              <strong>Select scans from workstation</strong>
+              <small>PNG, JPG, or JPEG. Upload one image or a small batch.</small>
+            </label>
+
+            <div class="toolbar">
+              <button id="run-btn" type="button">Run Model</button>
+              <p id="status" class="status">Ready when you are.</p>
+            </div>
+
+            <div class="preview-section">
+              <div class="preview-stage">
+                <div id="primary-preview" class="primary-preview is-empty">
+                  <div class="empty-illustration">
+                    <span>No scan selected</span>
+                  </div>
+                </div>
+                <div class="stage-caption">
+                  <strong>Selected X-ray</strong>
+                  <span>We can display the scan and the model confidence, even without region overlays.</span>
+                </div>
+              </div>
+
+              <div class="preview-rail">
+                <div class="rail-header">
+                  <strong>Uploaded Files</strong>
+                  <span id="file-count">0 selected</span>
+                </div>
+                <div id="preview-grid" class="preview-grid">
+                  <div class="results-empty">No files selected yet.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="summary-column">
+            <section class="panel decision-panel-wrap">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Diagnostic Summary</p>
+                  <h2>Model Decision</h2>
+                </div>
+              </div>
+
+              <div id="decision-panel" class="decision-panel decision-panel-empty">
+                <div class="decision-main">
+                  <span class="decision-label">Awaiting inference</span>
+                  <strong class="decision-value">No result yet</strong>
+                </div>
+                <p class="decision-copy">Run the model to see the highest-risk finding across the uploaded images.</p>
+              </div>
+
+              <div class="metric-grid">
+                <article class="metric-card">
+                  <span>Analysis Confidence</span>
+                  <strong id="top-confidence">--</strong>
+                </article>
+                <article class="metric-card">
+                  <span>Files Processed</span>
+                  <strong id="files-processed">0</strong>
+                </article>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Per-image Output</p>
+                  <h2>Case Results</h2>
+                </div>
+              </div>
+              <div id="results" class="results-empty">No results yet.</div>
+            </section>
+
+            <section class="panel note-panel">
+              <p class="eyebrow">Clinical Note</p>
+              <p>
+                This interface is designed for model review. If the final backend does not support lesion overlays,
+                we can still surface the uploaded X-ray, binary decision, and confidence clearly.
+              </p>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
