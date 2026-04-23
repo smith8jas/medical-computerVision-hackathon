@@ -9,12 +9,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from PIL import Image
-from torchvision.models import (
-    DenseNet121_Weights,
-    EfficientNet_B0_Weights,
-    densenet121,
-    efficientnet_b0,
-)
+from torchvision.models import densenet121, efficientnet_b0
 
 from backend.app.config import DEFAULT_MODEL_DIR
 
@@ -37,13 +32,13 @@ class UnconfiguredModelError(RuntimeError):
 class EfficientDenseEnsemble(nn.Module):
     def __init__(self, dropout: float = 0.3, efnet_weight: float = 0.5) -> None:
         super().__init__()
-        self.efnet = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+        self.efnet = efficientnet_b0(weights=None)
         ef_in = self.efnet.classifier[1].in_features
         self.efnet.classifier = nn.Sequential(nn.Dropout(dropout), nn.Linear(ef_in, 1))
 
         self.efnet_weight = efnet_weight
 
-        self.dnet = densenet121(weights=DenseNet121_Weights.IMAGENET1K_V1)
+        self.dnet = densenet121(weights=None)
         dn_in = self.dnet.classifier.in_features
         self.dnet.classifier = nn.Sequential(nn.Dropout(dropout), nn.Linear(dn_in, 1))
 
