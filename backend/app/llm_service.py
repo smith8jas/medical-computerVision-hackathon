@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import base64
 import os
 from dataclasses import dataclass
+from io import BytesIO
+
+from PIL import Image
 
 from backend.app.config import load_local_env
 
@@ -24,8 +28,9 @@ class LLMService:
     """
     Optional OpenAI-powered explanation service.
 
-    The LLM receives only structured classifier output. It does not inspect the
-    X-ray image, so summaries must stay framed as model-output explanations.
+    The LLM receives the classifier output and, when available, a resized copy
+    of the uploaded X-ray. It should describe cautious visual observations only,
+    not make an independent diagnosis.
     """
 
     KEY_ENV_VARS = (
@@ -99,6 +104,14 @@ class LLMService:
     def checked_key_env_vars(self) -> tuple[str, ...]:
         return self.KEY_ENV_VARS
 
+    def _image_data_url(self, image_bytes: bytes) -> str:
+        image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        image.thumbnail((768, 768))
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG", quality=85, optimize=True)
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        return f"data:image/jpeg;base64,{encoded}"
+
     def summarize_prediction(
         self,
         *,
@@ -106,6 +119,7 @@ class LLMService:
         probability: float,
         prediction: int,
         threshold: float,
+        image_bytes: bytes | None = None,
     ) -> FindingSummary:
         self.refresh()
         if not self.is_ready or self.client is None:
@@ -113,13 +127,15 @@ class LLMService:
 
         label = "cardiomegaly likely" if prediction == 1 else "no cardiomegaly detected"
         prompt = (
-            "Create a concise, patient-safe explanation of a cardiomegaly classifier result.\n"
+            "Create a concise clinician-facing explanation of a cardiomegaly classifier result.\n"
             "Important constraints:\n"
-            "- Do not claim to be making a diagnosis.\n"
-            "- Do not describe visual findings that were not provided.\n"
-            "- Explain that the statement is based on the model probability.\n"
+            "- Do not claim to make a diagnosis or replace radiologist review.\n"
+            "- If an image is provided, describe only visible chest X-ray features you can cautiously observe.\n"
+            "- If the image quality/projection limits assessment, say so.\n"
+            "- Relate the classifier probability to possible visual context, such as cardiac silhouette size, cardiomediastinal contour, projection/rotation, and lung field visibility.\n"
+            "- Do not invent measurements, cardiothoracic ratio values, or findings you cannot see.\n"
             "- Recommend clinician review of the image and clinical context.\n"
-            "- Keep it to 2 short sentences.\n\n"
+            "- Keep it to 3 to 4 short sentences.\n\n"
             f"Filename: {filename}\n"
             f"Classifier output: {label}\n"
             f"Probability: {probability:.4f}\n"
@@ -127,16 +143,29 @@ class LLMService:
         )
 
         try:
+            content: list[dict[str, str]] = [{"type": "input_text", "text": prompt}]
+            source = "openai"
+            if image_bytes is not None:
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": self._image_data_url(image_bytes),
+                        "detail": "low",
+                    }
+                )
+                source = "openai_vision"
+
             response = self.client.responses.create(
                 model=self.model,
                 instructions=(
-                    "You are a medical AI explanation assistant. Write cautious, "
-                    "clear support text for clinicians reviewing a chest X-ray AI result."
+                    "You are a medical AI explanation assistant for clinician review. "
+                    "Use cautious language, distinguish model probability from visual observation, "
+                    "and avoid definitive diagnosis."
                 ),
-                input=prompt,
-                max_output_tokens=140,
+                input=[{"role": "user", "content": content}],
+                max_output_tokens=220,
             )
-            return FindingSummary(text=response.output_text.strip(), source="openai")
+            return FindingSummary(text=response.output_text.strip(), source=source)
         except Exception:  # pragma: no cover - external API failure
             return FindingSummary(text=None, source="error")
 

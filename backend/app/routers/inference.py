@@ -40,12 +40,14 @@ async def predict(files: list[UploadFile] = File(...)) -> PredictResponse:
         raise HTTPException(status_code=500, detail=f"Inference failed: {exc}") from exc
 
     results: list[PredictionResult] = []
+    image_bytes_by_name = {filename: content for filename, content in payload}
     for pred in predictions:
         summary = llm_service.summarize_prediction(
             filename=pred.filename,
             probability=pred.probability,
             prediction=pred.prediction,
             threshold=model_service.threshold,
+            image_bytes=image_bytes_by_name.get(pred.filename),
         )
         results.append(
             PredictionResult(
