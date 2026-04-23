@@ -22,7 +22,7 @@ Optional LLM summaries:
 
 ```bash
 export OPENAI_API_KEY="..."
-export OPENAI_MODEL="gpt-5-mini"
+export OPENAI_MODEL="gpt-4o-mini"
 export LLM_SUMMARIES_ENABLED="true"
 ```
 

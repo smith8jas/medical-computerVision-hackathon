@@ -35,7 +35,7 @@ class LLMService:
             "yes",
             "on",
         }
-        self.model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key) if self.enabled and self.api_key and OpenAI else None
 
