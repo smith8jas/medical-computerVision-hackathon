@@ -526,7 +526,8 @@ healthBtn.addEventListener("click", async () => {
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
     }
-    setApiStatus(`API online / LLM ${formatServiceStatus(payload.llm_status)}`, "success");
+    const keySource = payload.llm_key_env_var ? ` via ${payload.llm_key_env_var}` : "";
+    setApiStatus(`API online / LLM ${formatServiceStatus(payload.llm_status)}${keySource}`, "success");
     setStatus("Backend API is reachable.", "success");
   } catch (error) {
     setApiStatus("Offline", "error");

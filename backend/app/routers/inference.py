@@ -14,6 +14,7 @@ def health() -> dict[str, str | bool]:
         "status": "ok",
         "model_ready": model_service.is_ready,
         "llm_status": llm_service.status,
+        "llm_key_env_var": llm_service.api_key_env_var or "",
     }
 
 

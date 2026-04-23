@@ -36,8 +36,20 @@ class LLMService:
             "on",
         }
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key, self.api_key_env_var = self._load_api_key()
         self.client = OpenAI(api_key=self.api_key) if self.enabled and self.api_key and OpenAI else None
+
+    def _load_api_key(self) -> tuple[str | None, str | None]:
+        for key_name in (
+            "OPENAI_API_KEY",
+            "OPEN_API_KEY",
+            "CHATGPT_API_KEY",
+            "GPT_API_KEY",
+        ):
+            value = os.getenv(key_name)
+            if value:
+                return value.strip(), key_name
+        return None, None
 
     @property
     def is_ready(self) -> bool:
@@ -50,7 +62,7 @@ class LLMService:
         if OpenAI is None:
             return "missing_openai_package"
         if not self.api_key:
-            return "missing_api_key"
+            return "missing_api_key_expected_OPENAI_API_KEY"
         if self.client is None:
             return "unavailable"
         return "ready"
