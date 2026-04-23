@@ -48,7 +48,10 @@
 
         <label class="field backend-field">
           <span>Backend URL</span>
-          <input id="backend-url" type="text" value="" />
+          <div class="backend-control">
+            <input id="backend-url" type="text" value="" />
+            <button id="health-btn" class="secondary-btn" type="button">Check API</button>
+          </div>
         </label>
       </header>
 
@@ -61,7 +64,7 @@
             </div>
           </div>
 
-          <label class="upload-zone" for="files">
+          <label id="upload-zone" class="upload-zone" for="files">
             <input id="files" type="file" accept="image/*" multiple />
             <span class="upload-icon">+</span>
             <strong>Select scans from workstation</strong>
@@ -123,6 +126,10 @@
               <article class="metric-card">
                 <span>Files Processed</span>
                 <strong id="files-processed">0</strong>
+              </article>
+              <article class="metric-card">
+                <span>API Status</span>
+                <strong id="api-status">Not checked</strong>
               </article>
             </div>
           </section>

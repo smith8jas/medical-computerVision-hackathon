@@ -1,6 +1,8 @@
 const backendUrlInput = document.querySelector("#backend-url");
 const filesInput = document.querySelector("#files");
+const uploadZoneEl = document.querySelector("#upload-zone");
 const runBtn = document.querySelector("#run-btn");
+const healthBtn = document.querySelector("#health-btn");
 const statusEl = document.querySelector("#status");
 const previewGridEl = document.querySelector("#preview-grid");
 const decisionPanelEl = document.querySelector("#decision-panel");
@@ -8,6 +10,7 @@ const primaryPreviewEl = document.querySelector("#primary-preview");
 const fileCountEl = document.querySelector("#file-count");
 const topConfidenceEl = document.querySelector("#top-confidence");
 const filesProcessedEl = document.querySelector("#files-processed");
+const apiStatusEl = document.querySelector("#api-status");
 const resultsEl = document.querySelector("#results");
 let selectedPreviewName = null;
 let selectedFiles = [];
@@ -26,9 +29,43 @@ function defaultBackendUrl() {
 
 backendUrlInput.value = defaultBackendUrl();
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+    return entities[char];
+  });
+}
+
+function healthUrlFromPredictUrl(predictUrl) {
+  const url = new URL(predictUrl, window.location.href);
+  if (/\/predict\/?$/.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/\/predict\/?$/, "/health");
+  } else {
+    url.pathname = "/health";
+  }
+  return url.toString();
+}
+
 function setStatus(message, kind = "") {
   statusEl.textContent = message;
   statusEl.className = `status ${kind}`.trim();
+}
+
+function setApiStatus(message, kind = "") {
+  apiStatusEl.textContent = message;
+  apiStatusEl.className = kind ? `api-status ${kind}` : "api-status";
+}
+
+function formatServiceStatus(value) {
+  return String(value || "unknown")
+    .replaceAll("_", " ")
+    .replace(/^./, (char) => char.toUpperCase());
 }
 
 function renderPrimaryPreview(file) {
@@ -44,7 +81,7 @@ function renderPrimaryPreview(file) {
 
   const objectUrl = URL.createObjectURL(file);
   primaryPreviewEl.className = "primary-preview";
-  primaryPreviewEl.innerHTML = `<img src="${objectUrl}" alt="${file.name}" />`;
+  primaryPreviewEl.innerHTML = `<img src="${objectUrl}" alt="${escapeHtml(file.name)}" />`;
 }
 
 function renderPreviews(files) {
@@ -67,12 +104,12 @@ function renderPreviews(files) {
     .map((file) => {
       const objectUrl = URL.createObjectURL(file);
       return `
-        <button class="preview-tile ${file.name === selectedPreviewName ? "is-selected" : ""}" type="button" data-filename="${file.name}">
+        <button class="preview-tile ${file.name === selectedPreviewName ? "is-selected" : ""}" type="button" data-filename="${escapeHtml(file.name)}">
           <div class="preview-frame">
-            <img src="${objectUrl}" alt="${file.name}" />
+            <img src="${objectUrl}" alt="${escapeHtml(file.name)}" />
           </div>
           <div class="preview-meta">
-            <div class="preview-name">${file.name}</div>
+            <div class="preview-name">${escapeHtml(file.name)}</div>
             <div class="preview-sub">Ready for review</div>
           </div>
         </button>
@@ -116,7 +153,8 @@ function renderDecision(results) {
       <strong class="decision-value">${isPositive ? "Cardiomegaly likely" : "No cardiomegaly detected"}</strong>
     </div>
     <p class="decision-copy">
-      ${topResult.filename} returned the highest probability at ${Number(topResult.probability).toFixed(4)}.
+      ${escapeHtml(topResult.filename)} returned the highest probability at ${Number(topResult.probability).toFixed(4)}.
+      ${topResult.summary ? `<br><br>${escapeHtml(topResult.summary)}` : ""}
     </p>
   `;
 }
@@ -131,11 +169,11 @@ function renderResults(results) {
   const cards = results
     .map(
       (row) => `
-        <article class="result-card">
+        <button class="result-card ${row.filename === selectedPreviewName ? "is-selected" : ""}" type="button" data-filename="${escapeHtml(row.filename)}">
           <div class="result-top">
-            <div class="result-name">${row.filename}</div>
-            <span class="result-tag ${row.prediction === 1 ? "positive" : "negative"}">
-              ${row.prediction === 1 ? "Cardiomegaly likely" : "No cardiomegaly detected"}
+            <div class="result-name">${escapeHtml(row.filename)}</div>
+            <span class="result-tag ${Number(row.prediction) === 1 ? "positive" : "negative"}">
+              ${Number(row.prediction) === 1 ? "Cardiomegaly likely" : "No cardiomegaly detected"}
             </span>
           </div>
           <div class="result-prob">
@@ -144,18 +182,81 @@ function renderResults(results) {
               <div class="prob-bar-fill" style="width: ${Math.max(3, Number(row.probability) * 100)}%"></div>
             </div>
           </div>
-        </article>
+          ${
+            row.summary
+              ? `<p class="result-summary">${escapeHtml(row.summary)}</p>`
+              : `<p class="result-summary muted">LLM summary unavailable: ${escapeHtml(row.summary_source || "not configured")}</p>`
+          }
+        </button>
       `
     )
     .join("");
 
   resultsEl.innerHTML = `<div class="results-list">${cards}</div>`;
+  resultsEl.querySelectorAll(".result-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectedPreviewName = card.dataset.filename;
+      renderPreviews(selectedFiles);
+      renderResults(results);
+    });
+  });
 
   renderDecision(results);
 }
 
+function setInputFiles(files) {
+  const transfer = new DataTransfer();
+  files.forEach((file) => transfer.items.add(file));
+  filesInput.files = transfer.files;
+  renderPreviews(files);
+}
+
 filesInput.addEventListener("change", () => {
   renderPreviews([...filesInput.files]);
+});
+
+["dragenter", "dragover"].forEach((eventName) => {
+  uploadZoneEl.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadZoneEl.classList.add("is-dragging");
+  });
+});
+
+["dragleave", "drop"].forEach((eventName) => {
+  uploadZoneEl.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadZoneEl.classList.remove("is-dragging");
+  });
+});
+
+uploadZoneEl.addEventListener("drop", (event) => {
+  const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith("image/"));
+  if (!files.length) {
+    setStatus("Drop PNG, JPG, or JPEG X-ray images.", "error");
+    return;
+  }
+  setInputFiles(files);
+  setStatus(`${files.length} file${files.length === 1 ? "" : "s"} ready for inference.`, "");
+});
+
+healthBtn.addEventListener("click", async () => {
+  setApiStatus("Checking...");
+  healthBtn.disabled = true;
+
+  try {
+    const response = await fetch(healthUrlFromPredictUrl(backendUrlInput.value));
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
+    setApiStatus(`API online / LLM ${formatServiceStatus(payload.llm_status)}`, "success");
+    setStatus("Backend API is reachable.", "success");
+  } catch (error) {
+    setApiStatus("Offline", "error");
+    setStatus(`Backend check failed: ${error.message}`, "error");
+  } finally {
+    healthBtn.disabled = false;
+  }
 });
 
 runBtn.addEventListener("click", async () => {
@@ -183,9 +284,11 @@ runBtn.addEventListener("click", async () => {
     }
 
     renderResults(payload.results || []);
+    setApiStatus(`Model ${formatServiceStatus(payload.model_status)} / LLM ${formatServiceStatus(payload.llm_status)}`, "success");
     setStatus("Inference completed.", "success");
   } catch (error) {
     renderResults([]);
+    setApiStatus("Error", "error");
     setStatus(error.message, "error");
   } finally {
     runBtn.disabled = false;

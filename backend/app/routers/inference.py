@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
+from backend.app.llm_service import llm_service
 from backend.app.model_service import UnconfiguredModelError, model_service
 from backend.app.schemas import PredictResponse, PredictionResult
 
@@ -8,8 +9,12 @@ router = APIRouter(tags=["inference"])
 
 
 @router.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, str | bool]:
+    return {
+        "status": "ok",
+        "model_ready": model_service.is_ready,
+        "llm_status": llm_service.status,
+    }
 
 
 @router.post("/predict", response_model=PredictResponse)
@@ -31,14 +36,26 @@ async def predict(files: list[UploadFile] = File(...)) -> PredictResponse:
     except Exception as exc:  # pragma: no cover - defensive API wrapper
         raise HTTPException(status_code=500, detail=f"Inference failed: {exc}") from exc
 
-    return PredictResponse(
-        model_status="ready",
-        results=[
+    results: list[PredictionResult] = []
+    for pred in predictions:
+        summary = llm_service.summarize_prediction(
+            filename=pred.filename,
+            probability=pred.probability,
+            prediction=pred.prediction,
+            threshold=model_service.threshold,
+        )
+        results.append(
             PredictionResult(
                 filename=pred.filename,
                 probability=pred.probability,
                 prediction=pred.prediction,
+                summary=summary.text,
+                summary_source=summary.source,
             )
-            for pred in predictions
-        ],
+        )
+
+    return PredictResponse(
+        model_status="ready",
+        llm_status=llm_service.status,
+        results=results,
     )

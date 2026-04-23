@@ -18,6 +18,18 @@ Run locally with:
 uvicorn backend.app.main:app --reload
 ```
 
+Optional LLM summaries:
+
+```bash
+export OPENAI_API_KEY="..."
+export OPENAI_MODEL="gpt-5-mini"
+export LLM_SUMMARIES_ENABLED="true"
+```
+
+When configured, `/predict` returns a short `summary` for each image. The summary
+explains the classifier output only; it does not independently diagnose from the
+image.
+
 For Render, this repo includes a root [`render.yaml`](/Users/jasonsmith/Desktop/medical-cv-hackathon/render.yaml)
 Blueprint that runs the FastAPI app as a single web service. The backend also
 serves the static frontend, so one Render service is enough for the demo app.
