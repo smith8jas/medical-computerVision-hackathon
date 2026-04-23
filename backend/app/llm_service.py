@@ -28,6 +28,16 @@ class LLMService:
     X-ray image, so summaries must stay framed as model-output explanations.
     """
 
+    KEY_ENV_VARS = (
+        "OPENAI_API_KEY",
+        "OPENAI_KEY",
+        "OPENAI_APIKEY",
+        "OPEN_AI_API_KEY",
+        "OPEN_API_KEY",
+        "CHATGPT_API_KEY",
+        "GPT_API_KEY",
+    )
+
     def __init__(self) -> None:
         self.enabled = os.getenv("LLM_SUMMARIES_ENABLED", "true").lower() in {
             "1",
@@ -37,26 +47,44 @@ class LLMService:
         }
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.api_key, self.api_key_env_var = self._load_api_key()
-        self.client = OpenAI(api_key=self.api_key) if self.enabled and self.api_key and OpenAI else None
+        self.client = self._build_client()
 
     def _load_api_key(self) -> tuple[str | None, str | None]:
-        for key_name in (
-            "OPENAI_API_KEY",
-            "OPEN_API_KEY",
-            "CHATGPT_API_KEY",
-            "GPT_API_KEY",
-        ):
+        load_local_env()
+        for key_name in self.KEY_ENV_VARS:
             value = os.getenv(key_name)
-            if value:
+            if value and value.strip():
                 return value.strip(), key_name
         return None, None
 
+    def _build_client(self):
+        if not self.enabled or not self.api_key or OpenAI is None:
+            return None
+        return OpenAI(api_key=self.api_key)
+
+    def refresh(self) -> None:
+        """Pick up env/config changes without leaking the API key."""
+        self.enabled = os.getenv("LLM_SUMMARIES_ENABLED", "true").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        api_key, api_key_env_var = self._load_api_key()
+        if api_key != self.api_key or api_key_env_var != self.api_key_env_var or self.client is None:
+            self.api_key = api_key
+            self.api_key_env_var = api_key_env_var
+            self.client = self._build_client()
+
     @property
     def is_ready(self) -> bool:
+        self.refresh()
         return self.client is not None
 
     @property
     def status(self) -> str:
+        self.refresh()
         if not self.enabled:
             return "disabled"
         if OpenAI is None:
@@ -67,6 +95,10 @@ class LLMService:
             return "unavailable"
         return "ready"
 
+    @property
+    def checked_key_env_vars(self) -> tuple[str, ...]:
+        return self.KEY_ENV_VARS
+
     def summarize_prediction(
         self,
         *,
@@ -75,6 +107,7 @@ class LLMService:
         prediction: int,
         threshold: float,
     ) -> FindingSummary:
+        self.refresh()
         if not self.is_ready or self.client is None:
             return FindingSummary(text=None, source=self.status)
 

@@ -75,6 +75,13 @@ function formatServiceStatus(value) {
     .replace(/^./, (char) => char.toUpperCase());
 }
 
+function apiStatusKindForPayload(payload) {
+  if (payload.llm_status && payload.llm_status !== "ready" && payload.llm_status !== "disabled") {
+    return "warning";
+  }
+  return "success";
+}
+
 function renderPrimaryPreview(file) {
   if (!file) {
     primaryPreviewEl.className = "primary-preview is-empty";
@@ -527,8 +534,16 @@ healthBtn.addEventListener("click", async () => {
       throw new Error(`API returned ${response.status}`);
     }
     const keySource = payload.llm_key_env_var ? ` via ${payload.llm_key_env_var}` : "";
-    setApiStatus(`API online / LLM ${formatServiceStatus(payload.llm_status)}${keySource}`, "success");
-    setStatus("Backend API is reachable.", "success");
+    const checkedKeys = payload.llm_checked_key_env_vars?.join(", ") || "OPENAI_API_KEY";
+    setApiStatus(
+      `API online / LLM ${formatServiceStatus(payload.llm_status)}${keySource}`,
+      apiStatusKindForPayload(payload),
+    );
+    if (payload.llm_status === "ready") {
+      setStatus("Backend API and LLM summaries are reachable.", "success");
+    } else {
+      setStatus(`Backend API is reachable, but LLM is ${formatServiceStatus(payload.llm_status)}. Checked: ${checkedKeys}.`, "error");
+    }
   } catch (error) {
     setApiStatus("Offline", "error");
     setStatus(`Backend check failed: ${error.message}`, "error");
@@ -568,7 +583,10 @@ runBtn.addEventListener("click", async () => {
     }
 
     renderResults(payload.results || []);
-    setApiStatus(`Model ${formatServiceStatus(payload.model_status)} / LLM ${formatServiceStatus(payload.llm_status)}`, "success");
+    setApiStatus(
+      `Model ${formatServiceStatus(payload.model_status)} / LLM ${formatServiceStatus(payload.llm_status)}`,
+      apiStatusKindForPayload(payload),
+    );
     setStatus("Inference completed.", "success");
   } catch (error) {
     renderResults([]);

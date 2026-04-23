@@ -9,12 +9,14 @@ router = APIRouter(tags=["inference"])
 
 
 @router.get("/health")
-def health() -> dict[str, str | bool]:
+def health() -> dict[str, str | bool | list[str]]:
     return {
         "status": "ok",
         "model_ready": model_service.is_ready,
         "llm_status": llm_service.status,
         "llm_key_env_var": llm_service.api_key_env_var or "",
+        "llm_checked_key_env_vars": list(llm_service.checked_key_env_vars),
+        "llm_model": llm_service.model,
     }
 
 
