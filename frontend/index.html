@@ -102,6 +102,41 @@
         </section>
 
         <aside class="summary-column">
+          <section class="panel report-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Medical Report</p>
+                <h2>Report Details</h2>
+              </div>
+            </div>
+
+            <div class="report-form">
+              <label class="field">
+                <span>Doctor name</span>
+                <input id="doctor-name" type="text" placeholder="Dr. Jane Smith" />
+              </label>
+              <label class="field">
+                <span>Patient name</span>
+                <input id="patient-name" type="text" placeholder="Patient full name" />
+              </label>
+              <label class="field">
+                <span>Patient ID / MRN</span>
+                <input id="patient-id" type="text" placeholder="Optional identifier" />
+              </label>
+              <label class="field">
+                <span>Clinical indication</span>
+                <textarea id="clinical-indication" rows="2" placeholder="e.g., Evaluate cardiomegaly on chest X-ray"></textarea>
+              </label>
+              <label class="field">
+                <span>Doctor notes</span>
+                <textarea id="doctor-notes" rows="3" placeholder="Optional clinical notes or follow-up recommendation"></textarea>
+              </label>
+            </div>
+
+            <button id="report-btn" class="report-btn" type="button" disabled>Generate PDF Report</button>
+            <p class="report-hint">Runs after inference. Your browser will open a printable report; choose “Save as PDF”.</p>
+          </section>
+
           <section class="panel decision-panel-wrap">
             <div class="panel-header">
               <div>

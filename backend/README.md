@@ -26,6 +26,11 @@ export OPENAI_MODEL="gpt-5-mini"
 export LLM_SUMMARIES_ENABLED="true"
 ```
 
+For local development, you can copy `.env.example` to `.env` and fill in the
+real key. `.env` is ignored by git and must never be committed. For Render, set
+`OPENAI_API_KEY`, `OPENAI_MODEL`, and `LLM_SUMMARIES_ENABLED` in the service
+environment variables dashboard.
+
 When configured, `/predict` returns a short `summary` for each image. The summary
 explains the classifier output only; it does not independently diagnose from the
 image.

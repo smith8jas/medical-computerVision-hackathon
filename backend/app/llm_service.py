@@ -3,6 +3,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from backend.app.config import load_local_env
+
+
+load_local_env()
 
 try:
     from openai import OpenAI
