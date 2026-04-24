@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
@@ -142,11 +143,20 @@ class ModelService:
         )
         self._model: WeightedCNNEnsemble | None = None
         self._load_error: str | None = None
-        self._try_load()
+        self._is_loading = False
+        self._load_lock = threading.Lock()
 
     @property
     def is_ready(self) -> bool:
         return self._model is not None
+
+    @property
+    def is_loading(self) -> bool:
+        return self._is_loading
+
+    @property
+    def load_error(self) -> str | None:
+        return self._load_error
 
     def _pick_device(self) -> torch.device:
         if torch.cuda.is_available():
@@ -182,6 +192,7 @@ class ModelService:
             return
 
         try:
+            self._is_loading = True
             model = self._build_model()
             densenet_state = torch.load(self.densenet_checkpoint_path, map_location=self.device)
             efnet_state = torch.load(self.efnet_checkpoint_path, map_location=self.device)
@@ -199,6 +210,16 @@ class ModelService:
                 "Failed to load 101 ensemble checkpoints: "
                 f"{exc}"
             )
+        finally:
+            self._is_loading = False
+
+    def ensure_loaded(self) -> None:
+        if self._model is not None:
+            return
+        with self._load_lock:
+            if self._model is not None:
+                return
+            self._try_load()
 
     def _foreground_crop(self, gray_img: Image.Image) -> Image.Image:
         gray_np = np.asarray(gray_img)
@@ -270,6 +291,7 @@ class ModelService:
         return self.transform(image).unsqueeze(0).to(self.device)
 
     def predict_many(self, files: list[tuple[str, bytes]]) -> list[BackendPrediction]:
+        self.ensure_loaded()
         if not self.is_ready or self._model is None:
             detail = self._load_error or (
                 "Inference model is not configured yet. "
