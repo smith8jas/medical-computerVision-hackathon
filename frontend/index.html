@@ -60,20 +60,24 @@
           <div class="panel-header">
             <div>
               <p class="eyebrow">Upload Workspace</p>
-              <h2>Drop X-ray files here</h2>
+              <h2>Load Chest X-rays</h2>
             </div>
           </div>
 
-          <label id="upload-zone" class="upload-zone" for="files">
-            <input id="files" type="file" accept="image/*" multiple />
-            <span class="upload-icon">+</span>
-            <strong>Select scans from workstation</strong>
-            <small>PNG, JPG, or JPEG. Upload one image or a small batch.</small>
-          </label>
+          <div class="upload-strip">
+            <label id="upload-zone" class="upload-zone" for="files">
+              <input id="files" type="file" accept="image/*" multiple />
+              <span class="upload-icon">+</span>
+              <div class="upload-copy">
+                <strong>Select scans from workstation</strong>
+                <small>PNG, JPG, or JPEG. Upload one image or a small batch.</small>
+              </div>
+            </label>
 
-          <div class="toolbar">
-            <button id="run-btn" type="button">Run Model</button>
-            <p id="status" class="status">Ready when you are.</p>
+            <div class="toolbar">
+              <button id="run-btn" type="button">Run Model</button>
+              <p id="status" class="status">Ready when you are.</p>
+            </div>
           </div>
 
           <div class="preview-section">
@@ -134,22 +138,17 @@
             </div>
           </section>
 
-          <section class="panel">
-            <div class="panel-header">
-              <div>
-                <p class="eyebrow">Per-image Output</p>
-                <h2>Case Results</h2>
-              </div>
-            </div>
-            <div id="results" class="results-empty">No results yet.</div>
-          </section>
-
           <section class="panel report-panel">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Medical Report</p>
-                <h2>PDF Report Details</h2>
+                <h2>Generate PDF Report</h2>
               </div>
+            </div>
+
+            <div class="report-intro">
+              <strong>Prepare the export packet</strong>
+              <p>Fill in the patient and clinician details, then generate a printable report from the current diagnostic result.</p>
             </div>
 
             <div class="report-form">
@@ -177,6 +176,16 @@
 
             <button id="report-btn" class="report-btn" type="button" disabled>Generate PDF Report</button>
             <p class="report-hint">Runs after inference. Your browser will open a printable report; choose “Save as PDF”.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Per-image Output</p>
+                <h2>Case Results</h2>
+              </div>
+            </div>
+            <div id="results" class="results-empty">No results yet.</div>
           </section>
 
           <section class="panel note-panel">

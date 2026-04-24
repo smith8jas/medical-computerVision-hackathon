@@ -59,6 +59,20 @@ function healthUrlFromPredictUrl(predictUrl) {
   return url.toString();
 }
 
+async function parseJsonResponse(response) {
+  const rawText = await response.text();
+  if (!rawText) {
+    return {};
+  }
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return {
+      detail: response.ok ? "Received an unreadable response from the server." : rawText,
+    };
+  }
+}
+
 function setStatus(message, kind = "") {
   statusEl.textContent = message;
   statusEl.className = `status ${kind}`.trim();
@@ -529,7 +543,7 @@ healthBtn.addEventListener("click", async () => {
 
   try {
     const response = await fetch(healthUrlFromPredictUrl(backendUrlInput.value));
-    const payload = await response.json().catch(() => ({}));
+    const payload = await parseJsonResponse(response);
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
     }
@@ -577,7 +591,7 @@ runBtn.addEventListener("click", async () => {
       body: formData,
     });
 
-    const payload = await response.json();
+    const payload = await parseJsonResponse(response);
     if (!response.ok) {
       throw new Error(payload.detail || "Prediction request failed.");
     }

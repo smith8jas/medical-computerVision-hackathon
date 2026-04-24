@@ -45,6 +45,10 @@ class UnconfiguredModelError(RuntimeError):
     """Raised when the backend model has not been wired yet."""
 
 
+class InvalidImageError(ValueError):
+    """Raised when an uploaded image is not suitable for X-ray inference."""
+
+
 class WeightedCNNEnsemble(nn.Module):
     def __init__(
         self,
@@ -218,8 +222,46 @@ class ModelService:
             return Image.fromarray(clahe.apply(gray_np)).convert("L")
         return ImageOps.autocontrast(gray_img)
 
+    def _looks_like_chest_xray(self, gray_img: Image.Image) -> bool:
+        gray_np = np.asarray(gray_img, dtype=np.uint8)
+        if gray_np.ndim != 2:
+            return False
+        height, width = gray_np.shape
+        if min(height, width) < 128:
+            return False
+
+        unique_levels = np.unique(gray_np).size
+        if unique_levels < 32:
+            return False
+
+        hist = np.bincount(gray_np.ravel(), minlength=256).astype(np.float64)
+        probs = hist / hist.sum()
+        probs = probs[probs > 0]
+        entropy = float(-(probs * np.log2(probs)).sum())
+        if entropy < 4.5:
+            return False
+
+        return True
+
     def _validate_image(self, image_bytes: bytes) -> Image.Image:
-        image = Image.open(BytesIO(image_bytes)).convert("L")
+        try:
+            pil_image = Image.open(BytesIO(image_bytes))
+            pil_image.load()
+        except Exception as exc:
+            raise InvalidImageError(
+                "We could not read that file as an image. Please upload a frontal chest radiograph."
+            ) from exc
+
+        if "A" in pil_image.getbands():
+            raise InvalidImageError(
+                "This image has transparency and does not appear to be a chest X-ray. Please upload a frontal chest radiograph."
+            )
+
+        image = pil_image.convert("L")
+        if not self._looks_like_chest_xray(image):
+            raise InvalidImageError(
+                "This image doesn't appear to be a chest X-ray. Please upload a frontal chest radiograph."
+            )
         image = self._foreground_crop(image)
         image = self._apply_clahe(image)
         return image.convert("RGB")

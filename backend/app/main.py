@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import FRONTEND_DIR
@@ -23,6 +23,16 @@ app.add_middleware(
 )
 
 app.include_router(inference_router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Unexpected server error during inference. Please try a chest X-ray image or retry in a moment."
+        },
+    )
 
 
 @app.get("/")
