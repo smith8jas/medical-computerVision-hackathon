@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from backend.app.llm_service import llm_service
-from backend.app.model_service import UnconfiguredModelError, model_service
+from backend.app.model_service import InvalidImageError, UnconfiguredModelError, model_service
 from backend.app.schemas import PredictResponse, PredictionResult
 
 
@@ -34,6 +34,8 @@ async def predict(files: list[UploadFile] = File(...)) -> PredictResponse:
 
     try:
         predictions = model_service.predict_many(payload)
+    except InvalidImageError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except UnconfiguredModelError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - defensive API wrapper
