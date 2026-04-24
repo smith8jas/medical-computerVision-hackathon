@@ -13,4 +13,6 @@ Once the final model is selected, wire it into
 
 Current Render default:
 
-- `05_7_1_efnet_densenet_joint_best.pt`
+- `101_weighted_cnn_preprocessed_ensemble_densenet121_best.pt`
+- `101_weighted_cnn_preprocessed_ensemble_efficientnet_b0_best.pt`
+- `101_weighted_cnn_preprocessed_ensemble_resnet18_best.pt`
